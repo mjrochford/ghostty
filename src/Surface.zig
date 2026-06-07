@@ -36,6 +36,7 @@ const App = @import("App.zig");
 const internal_os = @import("os/main.zig");
 const inspectorpkg = @import("inspector/main.zig");
 const SurfaceMouse = @import("surface_mouse.zig");
+const gsettings = @import("apprt/gtk/gsettings.zig");
 const ProcessInfo = @import("pty.zig").ProcessInfo;
 
 const log = std.log.scoped(.surface);
@@ -4027,19 +4028,22 @@ pub fn mouseButtonCallback(
     // copy-on-select targets the system clipboard, middle-click reads from
     // that instead. Falls back to the standard clipboard on platforms that
     // do not support the selection clipboard.
-    if (button == .middle and action == .press) switch (self.config.middle_click_action) {
-        .ignore => {},
-        .@"primary-paste" => {
-            const clipboard: apprt.Clipboard = switch (self.config.copy_on_select) {
-                .clipboard => .standard,
-                .true, .false => if (self.rt_surface.supportsClipboard(.selection))
-                    .selection
-                else
-                    .standard,
-            };
-            _ = try self.startClipboardRequest(clipboard, .{ .paste = {} });
-        },
-    };
+    if (button == .middle and action == .press) {
+        const gtk_enable_primary_paste = gsettings.get(.@"gtk-enable-primary-paste") orelse true;
+        if (gtk_enable_primary_paste) switch (self.config.middle_click_action) {
+            .ignore => {},
+            .@"primary-paste" => {
+                const clipboard: apprt.Clipboard = switch (self.config.copy_on_select) {
+                    .clipboard => .standard,
+                    .true, .false => if (self.rt_surface.supportsClipboard(.selection))
+                        .selection
+                    else
+                        .standard,
+                };
+                _ = try self.startClipboardRequest(clipboard, .{ .paste = {} });
+            },
+        };
+    }
 
     // Right-click down selects word for context menus. If the apprt
     // doesn't implement context menus this can be a bit weird but they

@@ -2815,10 +2815,6 @@ pub const Surface = extern struct {
             return;
         }
 
-        if (button == .middle and !priv.gtk_enable_primary_paste) {
-            return;
-        }
-
         const consumed = consumed: {
             const gtk_mods = event.getModifierState();
             const mods = gtk_key.translateMods(gtk_mods);
@@ -2872,10 +2868,6 @@ pub const Surface = extern struct {
 
         if (button == .left and priv.suppress_left_mouse_release) {
             priv.suppress_left_mouse_release = false;
-            return;
-        }
-
-        if (button == .middle and !priv.gtk_enable_primary_paste) {
             return;
         }
 
